@@ -4,6 +4,26 @@ import {ApiError} from "../utils/ApiError.js"
 import {uploadOncloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 
+
+  // helper function to generate access token and refresh token
+const generateAccessTokenAndRefreshToken = async (user_id)=>{
+
+    try {
+         const user = await User.findById(user_id)
+        if(!user){
+            throw new ApiError(404,"User not found")
+        }
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+        user.refreshToken = refreshToken
+        await user.save({validateBeforeSave:false})
+        return {accessToken,refreshToken}
+
+    } catch (error) {
+        throw new ApiError(500,"Error while generating access and refresh token")
+    }
+}
+// Register controller
 const registerController = asyncHandler(async(req,res,next)=>{
 
     
@@ -78,6 +98,78 @@ const registerController = asyncHandler(async(req,res,next)=>{
 
 })
 
+// login controller
+const loginController = asyncHandler(async(req,res)=>{
+      const {username , email, password}=req.body
+
+        if(!username && !email){
+            throw new ApiError(400,"Username or email is required")
+        }
+
+
+       const  user = await User.findOne({
+            $or:[
+                {email},    
+                {username}
+            ]
+        })
+            if(!user){
+                throw new ApiError(404,"User not found with this email or username")
+            }
+
+            const isPasswordMatch = await user.comparePassword(password)
+
+            if(!isPasswordMatch){
+                throw new ApiError(401,"Invalid password")
+            }
+
+            // generate access token
+            const {accessToken,refreshToken} = await generateAccessTokenAndRefreshToken(user._id)
+
+            const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+
+             if(!loggedInUser){
+                throw new ApiError(500,"Something went wrong while login user")
+             }
+
+             const option = {
+
+                httpOnly:true,
+               secure:true
+             }
+
+            // return res
+            return res.status(200)
+            .cookie("refreshToken",refreshToken,option)
+            .cookie("accessToken",accessToken,option)
+            .json(new ApiResponse(200, loggedInUser,"User login succesfully",))
+})
+
+// logoutCotroller
+const logoutController = asyncHandler(async(req,res)=>{
+    const userId = req.user._id
+    await User.findByIdAndUpdate(userId, {
+        $unset: {
+            refreshToken: 1
+        }
+    }, {
+        new: true
+    })
+
+    const option = {
+
+        httpOnly:true,
+       secure:true
+     }
+
+    return res.status(200)
+    .clearCookie("refreshToken",option)
+    .clearCookie("accessToken",option)
+    .json(new ApiResponse(200, {},"User logged out succesfully",))
+})
+
 export {
-    registerController
+    registerController,
+    loginController,
+    logoutController
 }
