@@ -2,7 +2,7 @@ import express from "express"
 import { registerController } from "../controllers/user.controller.js"
 import { upload } from "../middlewares/multer.middleware.js"
 import { verifyToken } from "../middlewares/auth.middleware.js"
-import { loginController, logoutController } from "../controllers/user.controller.js"
+import { loginController, logoutController,refreshTokenController } from "../controllers/user.controller.js"
 
 const router=express.Router()
 
@@ -24,5 +24,8 @@ router.post("/login",loginController)
 
 // This is my logout Route 
 router.post("/logout",verifyToken,logoutController)
+
+// This is my refresh token route
+router.post("/refresh-token",refreshTokenController)
 
 export default router

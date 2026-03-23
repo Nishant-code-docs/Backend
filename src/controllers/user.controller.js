@@ -168,8 +168,40 @@ const logoutController = asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200, {},"User logged out succesfully",))
 })
 
+const refreshTokenController = asyncHandler(async(req,res)=>{
+    const refreshToken = req.cookies.refreshToken || req.headers.authorization?.split(" ")[1]
+    if(!refreshToken){
+        throw new ApiError(401,"Unauthorized: No refresh token provided")
+    }
+
+    try {
+        const decodedToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET)
+        const user = await User.findById(decodedToken._id).select("-password -refreshToken")
+
+        if(!user){
+            throw new ApiError(404,"User not found")
+        }
+
+        const {accessToken, refreshToken: newRefreshToken} = await generateAccessTokenAndRefreshToken(user._id)
+
+        const option = {
+            httpOnly:true,
+            secure:true
+        }
+
+        return res.status(200)
+        .cookie("refreshToken", newRefreshToken, option)
+        .cookie("accessToken", accessToken, option)
+        .json(new ApiResponse(200, {accessToken, refreshToken: newRefreshToken},"Refresh token generated successfully",))
+
+    } catch (error) {
+        throw new ApiError(401,"Invalid refresh token")
+    }
+})
+
 export {
     registerController,
     loginController,
-    logoutController
+    logoutController,
+    refreshTokenController
 }
