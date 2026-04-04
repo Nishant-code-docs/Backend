@@ -3,6 +3,7 @@ import asyncHandler from "../utils/asyncHandler.js"
 import {ApiError} from "../utils/ApiError.js"
 import {uploadOncloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
+import jwt from "jsonwebtoken"
 
 
   // helper function to generate access token and refresh token
@@ -173,10 +174,10 @@ const refreshTokenController = asyncHandler(async(req,res)=>{
     if(!refreshToken){
         throw new ApiError(401,"Unauthorized: No refresh token provided")
     }
-
-    try {
+   
+  
         const decodedToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET)
-        const user = await User.findById(decodedToken._id).select("-password -refreshToken")
+        const user = await User.findById(decodedToken.userId).select("-password -refreshToken")
 
         if(!user){
             throw new ApiError(404,"User not found")
@@ -192,11 +193,8 @@ const refreshTokenController = asyncHandler(async(req,res)=>{
         return res.status(200)
         .cookie("refreshToken", newRefreshToken, option)
         .cookie("accessToken", accessToken, option)
-        .json(new ApiResponse(200, {accessToken, refreshToken: newRefreshToken},"Refresh token generated successfully",))
+        .json(new ApiResponse(200, {accessToken, newRefreshToken},"Refresh token generated successfully",))
 
-    } catch (error) {
-        throw new ApiError(401,"Invalid refresh token")
-    }
 })
 
 export {
