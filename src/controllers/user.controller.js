@@ -197,9 +197,32 @@ const refreshTokenController = asyncHandler(async(req,res)=>{
 
 })
 
+const changePasswordController = asyncHandler(async(req,res)=>{
+    const {oldPassword,newPassword,confirmPassword} =req.body;
+     
+    const user = await User.findById(req.user?.id);
+
+    if(!user){
+        throw new ApiError(400,"user is Invalid");
+    }
+
+    const checking = await user.comparePassword(oldPassword)
+
+    if(!checking){
+        throw new ApiError(400,"password is not correct")
+    }
+
+    user.password=newPassword;
+    user.save({validateBeforeSave:false})
+    return res
+    .status(200)
+    .json(new ApiResponse(200,"password is changed"))
+})
+
 export {
     registerController,
     loginController,
     logoutController,
-    refreshTokenController
+    refreshTokenController,
+    changePasswordController
 }
