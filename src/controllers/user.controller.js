@@ -199,6 +199,9 @@ const refreshTokenController = asyncHandler(async(req,res)=>{
 
 const changePasswordController = asyncHandler(async(req,res)=>{
     const {oldPassword,newPassword,confirmPassword} =req.body;
+    if(!(newPassword==confirmPassword)){
+        throw new ApiError(401,"New password and confirm password do not match")
+    }
      
     const user = await User.findById(req.user?.id);
 
