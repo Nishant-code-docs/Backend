@@ -168,7 +168,7 @@ const logoutController = asyncHandler(async(req,res)=>{
     .clearCookie("accessToken",option)
     .json(new ApiResponse(200, {},"User logged out succesfully",))
 })
-
+// refresh token controller
 const refreshTokenController = asyncHandler(async(req,res)=>{
     const refreshToken = req.cookies.refreshToken || req.headers.authorization?.split(" ")[1]
     if(!refreshToken){
@@ -196,7 +196,7 @@ const refreshTokenController = asyncHandler(async(req,res)=>{
         .json(new ApiResponse(200, {accessToken, newRefreshToken},"Refresh token generated successfully",))
 
 })
-
+// change password controller
 const changePasswordController = asyncHandler(async(req,res)=>{
     const {oldPassword,newPassword,confirmPassword} =req.body;
     if(!(newPassword==confirmPassword)){
@@ -222,10 +222,33 @@ const changePasswordController = asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200,"password is changed"))
 })
 
+const updateUserDetails = asyncHandler(async(req,res)=>{
+    const{ fullname, email } = req.body
+
+    if(!fullname||!email){
+        throw new ApiError(400,"Full name and email are required")
+    }
+  const user=  await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      fullname:fullname,
+      email:email
+    }
+,
+{new:true}
+  ).select("-password -refreshToken")
+
+  return res
+  .status(201)
+  .json(new ApiResponse(200,user,"user details updated successfully"))
+
+
+})
 export {
     registerController,
     loginController,
     logoutController,
     refreshTokenController,
-    changePasswordController
+    changePasswordController,
+    updateUserDetails
 }

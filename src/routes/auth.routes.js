@@ -1,5 +1,5 @@
 import express from "express"
-import { registerController } from "../controllers/user.controller.js"
+import { registerController, updateUserDetails } from "../controllers/user.controller.js"
 import { upload } from "../middlewares/multer.middleware.js"
 import { verifyToken } from "../middlewares/auth.middleware.js"
 import { loginController, logoutController,refreshTokenController,changePasswordController } from "../controllers/user.controller.js"
@@ -30,5 +30,8 @@ router.post("/refresh-token",refreshTokenController)
 
 // change Password
 router.post("/change-password",verifyToken,changePasswordController)
+
+// Update user details
+router.post("/update-user",verifyToken,updateUserDetails)
 
 export default router
