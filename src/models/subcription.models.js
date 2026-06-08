@@ -9,6 +9,6 @@ const subscriptionSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User"
     }
-});     
+},{timestamps:true});     
 const Subscription = mongoose.model("Subscription", subscriptionSchema);
 export default Subscription;
